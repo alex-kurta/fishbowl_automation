@@ -1,0 +1,15 @@
+Flag,SONum,Status,CustomerName,CustomerContact,BillToName,BillToAddress,BillToCity,BillToState,BillToZip,BillToCountry,ShipToName,ShipToAddress,ShipToCity,ShipToState,ShipToZip,ShipToCountry,ShipToResidential,CarrierName,TaxRateName,PriorityId,PONum,VendorPONum,Date,Salesman,ShippingTerms,PaymentTerms,FOB,Note,QuickBooksClassName,LocationGroupName,OrderDateScheduled,URL,CarrierService,DateExpired,Phone,Email,Category,CF-Bill To Email (AP),CF-Ship To Email,CF-Ship To Company/Organization,"CF-Check Ice, Tax, Surcharge, HLA and Total?"
+Flag,SOItemTypeID,ProductNumber,ProductDescription,ProductQuantity,UOM,ProductPrice,Taxable,TaxCode,Note,ItemQuickBooksClassName,ItemDateScheduled,ShowItem,KitItem,RevisionLevel,CustomerPartNumber,,,,,,,,,,,,,,,,,,,,,,,,,,
+SO,900008,25,Foobar Laboratories,Foobar,Foobar,777 Foobar CT,Burlington,ON,L7L 5R2,CANADA,Foo,777 Foobar CT,Burlington,ON,L7L 5R2,CANADA,FALSE,FedEx,Out of state,30,77777,,8/20/2026,jsmith,Prepaid & Billed,NET 30,Origin,"ap@example.com
+purchasing@example.com
+FEDEX#000-000-000
+FedEx#:000-000-000",None,Main,8/20/2026,,Priority Overnight,,555-0100,accountspayable@foobarlabs.com,,accountspayable@foobarlabs.com,accountspayable@foobarlabs.com,,Yes - I have checked
+Item,10,6001,"Example Reagent, sterile, 100 ml",1,ea,15,TRUE,9999,,30 Reagents,8/20/2026,TRUE,FALSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,80,6002,Example Medium A,1,ea,100,TRUE,9999,,20 Media,8/20/2026,TRUE,FALSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,6002-b,"Example Medium A-basal, 500 ml",1,ea,0,TRUE,9999,,20 Media,8/20/2026,FALSE,TRUE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,6002 - Supp,Example Medium A - Supplements,1,ea,0,TRUE,9999,,20 Media,8/20/2026,FALSE,TRUE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,80,6003,Example Medium B,3,ea,120,TRUE,9999,,20 Media,8/20/2026,TRUE,FALSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,6003-b,"Example Medium B-basal, 500 ml",3,ea,0,FALSE,,,20 Media,8/20/2026,FALSE,TRUE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,6003 - Supp,Example Medium B - Supplements,3,ea,0,TRUE,9999,,20 Media,8/20/2026,FALSE,TRUE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,0,Dry Ice - Domestic,1,ea,30,FALSE,,,00 Fees,8/20/2026,TRUE,FALSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Item,10,7,Handling - Domestic,1,ea,25,FALSE,,Fedex #000000000,00 Fees,8/20/2026,TRUE,FALSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
