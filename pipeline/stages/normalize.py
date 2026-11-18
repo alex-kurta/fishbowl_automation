@@ -112,13 +112,13 @@ def _write_so_row(writer, order: Order):
     row[2] = STATUS
     row[3] = order.customer_name
     row[4] = order.customer_contact
-    row[5] = order.billing.name or order.customer_name
+    row[5] = order.billing.company or order.customer_name
     row[6] = order.billing.street
     row[7] = order.billing.city
     row[8] = _normalize_state(order.billing.state)
     row[9] = order.billing.zip_code
     row[10] = order.billing.country
-    row[11] = order.shipping.name or order.customer_name
+    row[11] = order.shipping.company or order.customer_name
     row[12] = order.shipping.street
     row[13] = order.shipping.city
     row[14] = _normalize_state(order.shipping.state)
@@ -147,7 +147,7 @@ def _write_so_row(writer, order: Order):
     row[37] = ""
     row[38] = order.email
     row[39] = order.email
-    row[40] = ""
+    row[40] = order.shipping.company or order.customer_name
     row[41] = "Yes - I have checked"
     writer.writerow(row)
 

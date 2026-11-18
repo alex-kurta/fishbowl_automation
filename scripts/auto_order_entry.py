@@ -20,6 +20,7 @@ from pipeline.config import (
     inbox_hold_active,
     inbox_hold_until,
 )
+from pipeline.db.client import customer_exists
 from pipeline.fishbowl_api import FishbowlApiClient, FishbowlAuthError
 from pipeline.stages.extract import extract_order_from_body
 from pipeline.stages.guards import SkipMessage, comment_references, quote_reference
@@ -32,6 +33,7 @@ from pipeline.stages.inbox import Mailbox
 from pipeline.stages.normalize import _normalize_sku, order_to_csv
 from pipeline.stages.product_alerts import alert_notes, pick_ticket_code
 from pipeline.stages.notify import (
+    PO_NUMBER_ALERT_NEW_CUSTOMER,
     build_failure_notification,
     build_notification,
     send_notification,
@@ -84,6 +86,26 @@ def _apply_product_notes(order) -> None:
         log.info("PO %s: item notes %s", order.order_number, ", ".join(applied))
 
 
+def _send_po_new_customer_alert(order) -> None:
+    subject = f"Fishbowl entry blocked: PO {order.order_number} - new customer"
+    body = "\n".join(
+        [
+            "A web order with a PO number was received from a customer not in Fishbowl.",
+            "The order has NOT been processed.",
+            "",
+            f"Customer PO:  {order.order_number}",
+            f"Customer:     {order.customer_name}",
+            f"Contact:      {order.customer_contact} <{order.email}>",
+            f"PO Number:    {order.po_number}",
+            "",
+            "** NEW CUSTOMER ATTEMPTING TO USE PO NUMBER - ORDER NOT PROCESSED **",
+            "",
+            "Please add the customer to Fishbowl if appropriate, then enter the order manually.",
+        ]
+    )
+    send_notification(subject, body, ORDER_NOTIFY_TO)
+
+
 def process_message(message, client, args) -> str:
     order = extract_order_from_body(message.body, message.subject)
     _warn_on_incomplete_address(order)
@@ -104,6 +126,16 @@ def process_message(message, client, args) -> str:
                 f"comment references existing PO {reference} "
                 f"(SO {existing[0]['num']}), handle manually"
             )
+
+    # Check for PO number in payment field and validate customer
+    if order.po_number:
+        if not customer_exists(order.customer_name):
+            _send_po_new_customer_alert(order)
+            raise SkipMessage(
+                f"new customer '{order.customer_name}' attempting to use PO number {order.po_number}, order not processed"
+            )
+        # Mark order so notification includes PO number alert
+        order._po_customer_new = False
 
     _apply_product_notes(order)
     csv_path = order_to_csv(order, OUTPUT_DIR / f"order_{order.order_number}.csv")

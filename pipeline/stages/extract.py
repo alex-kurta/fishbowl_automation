@@ -89,6 +89,7 @@ def _parse_body(body: str, subject: str) -> Order:
     order.shipping = _extract_address(body, "Shipping Info")
     order.customer_name = order.billing.company or order.billing.name
     order.payment_method = _extract_payment_method(body)
+    order.po_number = _extract_po_from_payment(order.payment_method)
     order.carrier, order.carrier_service = _extract_shipping_method(body)
     order.lines = _extract_lines(body)
     order.subtotal, order.shipping_cost, order.total = _extract_totals(body)
@@ -224,9 +225,22 @@ def _drop_repeated_names(addr: Address) -> str:
     return "\n".join(line for line in lines if " ".join(line.split()).casefold() not in names)
 
 
+PO_NUMBER_PATTERN = re.compile(
+    r"(?:PO|P\.O\.|Purchase Order)\s*[#:]?\s*[-_]?([A-Za-z0-9][A-Za-z0-9\-_]*)",
+    re.IGNORECASE,
+)
+
+
 def _extract_payment_method(body: str) -> str:
     lines = _section_lines(body, "Payment Method")
     return lines[0] if lines else ""
+
+
+def _extract_po_from_payment(payment_method: str) -> str:
+    if not payment_method:
+        return ""
+    match = PO_NUMBER_PATTERN.search(payment_method)
+    return match.group(1).strip() if match else ""
 
 
 def _extract_shipping_method(body: str) -> tuple[str, str]:

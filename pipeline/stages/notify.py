@@ -12,12 +12,19 @@ from pipeline.config import (
 
 ORDER_NUMBER_IN_SUBJECT = re.compile(r"#\s*(\d{5,})")
 
+PO_NUMBER_ALERT_NEW_CUSTOMER = "NEW CUSTOMER ATTEMPTING TO USE PO NUMBER - ORDER NOT PROCESSED"
+PO_NUMBER_ALERT_EXISTING_CUSTOMER = "ORDER HAS A PO NUMBER"
+
 
 def _money(value) -> str:
     try:
         return f"{float(value):.2f}"
     except (TypeError, ValueError):
         return str(value)
+
+
+def _bold_text(text: str) -> str:
+    return f"\n** {text} **\n"
 
 
 def build_notification(order, so, items) -> tuple[str, str, str]:
@@ -36,6 +43,13 @@ def build_notification(order, so, items) -> tuple[str, str, str]:
         blocks.append("ALERTS - CHECK BEFORE RELEASE")
         blocks.extend(f"  {sku}: {alert}" for sku, alert in alerts)
         blocks.append("")
+
+    if order.po_number:
+        if getattr(order, "_po_customer_new", False):
+            blocks.append(_bold_text(PO_NUMBER_ALERT_NEW_CUSTOMER))
+        else:
+            blocks.append(_bold_text(PO_NUMBER_ALERT_EXISTING_CUSTOMER))
+
     blocks.extend(
         [
             f"Fishbowl SO:   {so['num']}",
@@ -52,16 +66,12 @@ def build_notification(order, so, items) -> tuple[str, str, str]:
             "Please open the sales order in Fishbowl and correct any fields that need attention.",
         ]
     )
-    return subject, "\n".join(blocks), _notification_html(order, so, items, alerts)
 
-
-def _notification_html(order, so, items, alerts) -> str:
-    esc = html.escape
     alert_html = ""
     if alerts:
         lines = "".join(
-            f'<p style="margin:0;font-weight:bold;">{esc(alert)} '
-            f'<span style="font-weight:normal;color:#444;">(product {esc(str(sku))})</span></p>'
+            f'<p style="margin:0;font-weight:bold;">{html.escape(alert)} '
+            f'<span style="font-weight:normal;color:#444;">(product {html.escape(str(sku))})</span></p>'
             for sku, alert in alerts
         )
         alert_html = (
@@ -71,6 +81,39 @@ def _notification_html(order, so, items, alerts) -> str:
             "ALERTS - CHECK BEFORE RELEASE</p>"
             f"{lines}</div>"
         )
+
+    po_alert_html = ""
+    if order.po_number:
+        if getattr(order, "_po_customer_new", False):
+            po_alert_html = (
+                '<div style="border:2px solid #b00020;background:#fff4f4;padding:10px 12px;'
+                'margin:0 0 16px 0;">'
+                f'<p style="margin:0;font-weight:bold;color:#b00020;">{html.escape(PO_NUMBER_ALERT_NEW_CUSTOMER)}</p>'
+                '</div>'
+            )
+        else:
+            po_alert_html = (
+                '<div style="border:2px solid #b00020;background:#fff4f4;padding:10px 12px;'
+                'margin:0 0 16px 0;">'
+                f'<p style="margin:0;font-weight:bold;color:#b00020;">{html.escape(PO_NUMBER_ALERT_EXISTING_CUSTOMER)}</p>'
+                '</div>'
+            )
+
+    rows = "".join(
+        f"<tr><td>{html.escape(str(item['productNum']))}</td>"
+        f"<td>{html.escape(str(item['qtyOrdered']))}</td>"
+        f"<td>${html.escape(_money(item['unitPrice']))}</td></tr>"
+        for item in items
+    )
+    return (
+        subject,
+        "\n".join(blocks),
+        _notification_html_with_alerts(order, so, items, alert_html, po_alert_html),
+    )
+
+
+def _notification_html_with_alerts(order, so, items, alert_html, po_alert_html) -> str:
+    esc = html.escape
     rows = "".join(
         f"<tr><td>{esc(str(item['productNum']))}</td>"
         f"<td>{esc(str(item['qtyOrdered']))}</td>"
@@ -81,12 +124,13 @@ def _notification_html(order, so, items, alerts) -> str:
         '<html><body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111;">'
         "<p>An order was entered into Fishbowl automatically and needs manual review.</p>"
         f"{alert_html}"
+        f"{po_alert_html}"
         '<table cellpadding="4" style="border-collapse:collapse;">'
         f'<tr><td><strong>Fishbowl SO</strong></td><td>{esc(str(so["num"]))}</td></tr>'
         f"<tr><td><strong>Customer PO</strong></td><td>{esc(str(order.order_number))}</td></tr>"
         f"<tr><td><strong>Customer</strong></td><td>{esc(str(order.customer_name))}</td></tr>"
         f"<tr><td><strong>Contact</strong></td><td>{esc(str(order.customer_contact))} "
-        f"&lt;{esc(str(order.email))}&gt;</td></tr>"
+        f"<{esc(str(order.email))}></td></tr>"
         f"<tr><td><strong>Subtotal</strong></td><td>${order.subtotal:.2f}</td></tr>"
         f"<tr><td><strong>Shipping</strong></td><td>${order.shipping_cost:.2f}</td></tr>"
         f"<tr><td><strong>Total</strong></td><td>${order.total:.2f}</td></tr>"
