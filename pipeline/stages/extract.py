@@ -77,6 +77,26 @@ def extract_order_from_body(body: str, subject: str = "") -> Order:
     return _parse_body(body or "", subject or "")
 
 
+SUBJECT_PREFIX = re.compile(r"^(?:RE|FW|FWD)\s*:\s*", re.IGNORECASE)
+SUBJECT_COMPANY = re.compile(r"^(.+?):\s*New order:\s*#", re.IGNORECASE)
+
+
+def _extract_company_from_subject(subject: str) -> str:
+    cleaned = subject or ""
+    while True:
+        stripped = SUBJECT_PREFIX.sub("", cleaned).strip()
+        if stripped == cleaned:
+            break
+        cleaned = stripped
+    match = SUBJECT_COMPANY.search(cleaned)
+    if not match:
+        return ""
+    company = match.group(1).strip()
+    if company.isdigit():
+        return ""
+    return company
+
+
 def _parse_body(body: str, subject: str) -> Order:
     if looks_like_html(body):
         body = html_to_text(body)
@@ -87,7 +107,12 @@ def _parse_body(body: str, subject: str) -> Order:
     order.customer_contact, order.email = _extract_contact(body)
     order.billing = _extract_address(body, "Billing Info")
     order.shipping = _extract_address(body, "Shipping Info")
-    order.customer_name = order.billing.company or order.billing.name
+    order.customer_name = (
+        order.billing.company
+        or order.shipping.company
+        or _extract_company_from_subject(subject)
+        or order.billing.name
+    )
     order.payment_method = _extract_payment_method(body)
     order.po_number = _extract_po_from_payment(order.payment_method)
     order.carrier, order.carrier_service = _extract_shipping_method(body)

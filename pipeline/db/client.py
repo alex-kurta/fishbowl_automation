@@ -20,6 +20,6 @@ def run_query(sql, params=None):
 
 
 def customer_exists(company_name: str) -> bool:
-    sql = "SELECT 1 FROM companies WHERE name = %s LIMIT 1"
+    sql = "SELECT 1 FROM companies WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s)) LIMIT 1"
     rows, _ = run_query(sql, (company_name,))
     return len(rows) > 0
